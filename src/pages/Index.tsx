@@ -38,7 +38,7 @@ const Index = () => {
         </h1>
         
         <div className="text-xl md:text-2xl text-cyan-300 mb-12 font-mono">
-          <div className="mb-2">>>> FUTURISTIC RACING EXPERIENCE <<<</div>
+          <div className="mb-2">&gt;&gt;&gt; FUTURISTIC RACING EXPERIENCE &lt;&lt;&lt;</div>
           <div className="text-sm opacity-70">Enter the neon grid</div>
         </div>
 
