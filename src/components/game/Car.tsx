@@ -2,7 +2,7 @@
 import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useBox } from '@react-three/cannon';
-import { Vector3 } from 'three';
+import { Vector3, Mesh } from 'three';
 import { useGame } from '../../contexts/GameContext';
 
 export const Car = () => {
@@ -62,7 +62,7 @@ export const Car = () => {
   });
 
   return (
-    <mesh ref={ref} castShadow>
+    <mesh ref={ref as React.Ref<Mesh>} castShadow>
       <boxGeometry args={[2, 0.5, 4]} />
       <meshStandardMaterial 
         color="#00ffff" 

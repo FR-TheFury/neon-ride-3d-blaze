@@ -1,5 +1,6 @@
 
 import { usePlane } from '@react-three/cannon';
+import { Mesh } from 'three';
 
 export const Track = () => {
   const [ref] = usePlane(() => ({
@@ -10,7 +11,7 @@ export const Track = () => {
   return (
     <group>
       {/* Ground */}
-      <mesh ref={ref} receiveShadow>
+      <mesh ref={ref as React.Ref<Mesh>} receiveShadow>
         <planeGeometry args={[100, 100]} />
         <meshStandardMaterial 
           color="#000011" 
