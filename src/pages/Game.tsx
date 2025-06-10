@@ -1,18 +1,14 @@
 
-import { Canvas, extend } from '@react-three/fiber';
+import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/cannon';
 import { EffectComposer, Bloom, Noise } from '@react-three/postprocessing';
 import { Suspense } from 'react';
-import * as THREE from 'three';
 import { Scene } from '../components/game/Scene';
 import { Car } from '../components/game/Car';
 import { Track } from '../components/game/Track';
 import { Lighting } from '../components/game/Lighting';
 import { HUD } from '../components/game/HUD';
 import { GameProvider } from '../contexts/GameContext';
-
-// Extend the fiber catalog with Three.js objects
-extend(THREE);
 
 const Game = () => {
   return (
