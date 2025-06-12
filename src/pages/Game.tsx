@@ -2,6 +2,8 @@
 import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/cannon';
 import { Suspense } from 'react';
+import { extend } from '@react-three/fiber';
+import * as THREE from 'three';
 import { Scene } from '../components/game/Scene';
 import { AdvancedCar } from '../components/game/AdvancedCar';
 import { AdvancedTrack } from '../components/game/AdvancedTrack';
@@ -10,6 +12,9 @@ import { AdvancedEffects } from '../components/game/AdvancedEffects';
 import { ParticleSystem } from '../components/game/ParticleSystem';
 import { HUD } from '../components/game/HUD';
 import { GameProvider } from '../contexts/GameContext';
+
+// Extend Three.js elements for react-three-fiber
+extend(THREE);
 
 const Game = () => {
   return (
@@ -24,14 +29,13 @@ const Game = () => {
           }}
           shadows={{
             enabled: true,
-            type: 'PCFSoftShadows',
+            type: THREE.PCFSoftShadowMap,
           }}
           gl={{
             antialias: true,
             alpha: false,
             powerPreference: 'high-performance',
-            physicallyCorrectLights: true,
-            toneMapping: 2, // ACESFilmicToneMapping
+            toneMapping: THREE.ACESFilmicToneMapping,
             toneMappingExposure: 1.2,
           }}
           className="bg-gradient-to-b from-blue-900 via-purple-900 to-black"

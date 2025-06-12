@@ -119,8 +119,10 @@ export const AdvancedCar = () => {
         
         {/* Wheels */}
         {[
-          [-1, -0.3, 1.5], [1, -0.3, 1.5], // Front wheels
-          [-1, -0.3, -1.5], [1, -0.3, -1.5] // Rear wheels
+          [-1, -0.3, 1.5] as [number, number, number], 
+          [1, -0.3, 1.5] as [number, number, number], 
+          [-1, -0.3, -1.5] as [number, number, number], 
+          [1, -0.3, -1.5] as [number, number, number]
         ].map((pos, i) => (
           <mesh key={i} position={pos} castShadow>
             <cylinderGeometry args={[0.4, 0.4, 0.3, 16]} />
