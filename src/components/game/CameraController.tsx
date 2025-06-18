@@ -6,10 +6,10 @@ import { useGame } from '../../contexts/GameContext';
 
 interface CameraControllerProps {
   carPosition: [number, number, number];
-  carRotation: [number, number, number];
+  carRotation?: [number, number, number];
 }
 
-export const CameraController = ({ carPosition, carRotation }: CameraControllerProps) => {
+export const CameraController = ({ carPosition, carRotation = [0, 0, 0] }: CameraControllerProps) => {
   const { camera } = useThree();
   const targetPosition = useRef(new Vector3());
   const currentPosition = useRef(new Vector3());
@@ -38,36 +38,51 @@ export const CameraController = ({ carPosition, carRotation }: CameraControllerP
             default: return 'follow';
           }
         });
-        console.log('Changement de caméra');
+        console.log('Changement de caméra:', cameraMode);
       }
       
       // Contrôles de caméra libre avec les flèches
       if (cameraMode === 'free') {
         const moveSpeed = 0.5;
-        const rotateSpeed = 0.1;
         
         switch (event.code) {
           case 'ArrowUp':
-            freeMode.offset.z -= moveSpeed;
+            setFreeMode(prev => ({
+              ...prev,
+              offset: new Vector3(prev.offset.x, prev.offset.y, prev.offset.z - moveSpeed)
+            }));
             break;
           case 'ArrowDown':
-            freeMode.offset.z += moveSpeed;
+            setFreeMode(prev => ({
+              ...prev,
+              offset: new Vector3(prev.offset.x, prev.offset.y, prev.offset.z + moveSpeed)
+            }));
             break;
           case 'ArrowLeft':
-            freeMode.offset.x -= moveSpeed;
+            setFreeMode(prev => ({
+              ...prev,
+              offset: new Vector3(prev.offset.x - moveSpeed, prev.offset.y, prev.offset.z)
+            }));
             break;
           case 'ArrowRight':
-            freeMode.offset.x += moveSpeed;
+            setFreeMode(prev => ({
+              ...prev,
+              offset: new Vector3(prev.offset.x + moveSpeed, prev.offset.y, prev.offset.z)
+            }));
             break;
           case 'PageUp':
-            freeMode.offset.y += moveSpeed;
+            setFreeMode(prev => ({
+              ...prev,
+              offset: new Vector3(prev.offset.x, prev.offset.y + moveSpeed, prev.offset.z)
+            }));
             break;
           case 'PageDown':
-            freeMode.offset.y -= moveSpeed;
+            setFreeMode(prev => ({
+              ...prev,
+              offset: new Vector3(prev.offset.x, prev.offset.y - moveSpeed, prev.offset.z)
+            }));
             break;
         }
-        
-        setFreeMode({...freeMode});
       }
     };
     
@@ -76,7 +91,7 @@ export const CameraController = ({ carPosition, carRotation }: CameraControllerP
     return () => {
       window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [cameraMode, freeMode]);
+  }, [cameraMode, carPosition]);
 
   useFrame(() => {
     // Récupérer la rotation et la vitesse
