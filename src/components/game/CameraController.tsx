@@ -9,7 +9,7 @@ interface CameraControllerProps {
   carRotation?: [number, number, number];
 }
 
-export const CameraController = ({ carPosition, carRotation = [0, 0, 0] }: CameraControllerProps) => {
+const CameraController = ({ carPosition, carRotation = [0, 0, 0] }: CameraControllerProps) => {
   const { camera } = useThree();
   const targetPosition = useRef(new Vector3());
   const currentPosition = useRef(new Vector3());
@@ -187,3 +187,5 @@ export const CameraController = ({ carPosition, carRotation = [0, 0, 0] }: Camer
 
   return null;
 };
+
+export { CameraController };
