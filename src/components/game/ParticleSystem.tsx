@@ -23,6 +23,7 @@ export const ParticleSystem = ({ carPosition }: ParticleSystemProps) => {
   const particlesRef = useRef<THREE.Points>(null);
   const particles = useRef<Particle[]>([]);
   const geometry = useRef(new THREE.BufferGeometry());
+  const [hasParticles, setHasParticles] = useState(false);
   
   // Matériau pour les particules
   const particleMaterial = useMemo(() => {
@@ -137,10 +138,13 @@ export const ParticleSystem = ({ carPosition }: ParticleSystemProps) => {
       geometry.current.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
       geometry.current.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
       geometry.current.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+      setHasParticles(true);
+    } else {
+      setHasParticles(false);
     }
   });
 
-  return positions.length > 0 ? (
+  return hasParticles ? (
     <points ref={particlesRef} geometry={geometry.current} material={particleMaterial} />
   ) : null;
 };
