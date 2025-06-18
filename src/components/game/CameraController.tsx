@@ -16,24 +16,58 @@ export const CameraController = ({ carPosition, carRotation }: CameraControllerP
   const targetLookAt = useRef(new Vector3());
   const currentLookAt = useRef(new Vector3());
   const { gameState } = useGame();
-  const [cameraMode, setCameraMode] = useState<'follow'|'cinematic'|'cockpit'>('follow');
+  const [cameraMode, setCameraMode] = useState<'follow'|'cinematic'|'cockpit'|'free'>('follow');
+  const [freeMode, setFreeMode] = useState({
+    offset: new Vector3(0, 8, 15),
+    lookAt: new Vector3(0, 0, 0)
+  });
 
   // Initialiser les positions
   useEffect(() => {
     currentPosition.current.set(carPosition[0], carPosition[1] + 8, carPosition[2] + 15);
     currentLookAt.current.set(carPosition[0], carPosition[1], carPosition[2]);
     
-    // Changer la caméra avec la touche C
+    // Gestion des touches pour la caméra
     const handleKeyPress = (event: KeyboardEvent) => {
       if (event.code === 'KeyC') {
         setCameraMode(prev => {
           switch (prev) {
             case 'follow': return 'cinematic';
             case 'cinematic': return 'cockpit';
+            case 'cockpit': return 'free';
             default: return 'follow';
           }
         });
         console.log('Changement de caméra');
+      }
+      
+      // Contrôles de caméra libre avec les flèches
+      if (cameraMode === 'free') {
+        const moveSpeed = 0.5;
+        const rotateSpeed = 0.1;
+        
+        switch (event.code) {
+          case 'ArrowUp':
+            freeMode.offset.z -= moveSpeed;
+            break;
+          case 'ArrowDown':
+            freeMode.offset.z += moveSpeed;
+            break;
+          case 'ArrowLeft':
+            freeMode.offset.x -= moveSpeed;
+            break;
+          case 'ArrowRight':
+            freeMode.offset.x += moveSpeed;
+            break;
+          case 'PageUp':
+            freeMode.offset.y += moveSpeed;
+            break;
+          case 'PageDown':
+            freeMode.offset.y -= moveSpeed;
+            break;
+        }
+        
+        setFreeMode({...freeMode});
       }
     };
     
@@ -42,7 +76,7 @@ export const CameraController = ({ carPosition, carRotation }: CameraControllerP
     return () => {
       window.removeEventListener('keydown', handleKeyPress);
     };
-  }, []);
+  }, [cameraMode, freeMode]);
 
   useFrame(() => {
     // Récupérer la rotation et la vitesse
@@ -52,31 +86,28 @@ export const CameraController = ({ carPosition, carRotation }: CameraControllerP
     // Calculer les paramètres de caméra en fonction du mode
     if (cameraMode === 'follow') {
       // Mode suivi classique
-      const offsetDistance = 15 - Math.min(speed / 80 * 5, 5); // Se rapproche à haute vitesse
-      const offsetHeight = 8 - Math.min(speed / 100 * 3, 3); // S'abaisse légèrement à haute vitesse
+      const offsetDistance = 15 - Math.min(speed / 80 * 5, 5);
+      const offsetHeight = 8 - Math.min(speed / 100 * 3, 3);
       
-      // Position derrière la voiture basée sur sa rotation
       const behindX = carPosition[0] + Math.sin(carRotationY + Math.PI) * offsetDistance;
       const behindZ = carPosition[2] + Math.cos(carRotationY + Math.PI) * offsetDistance;
       
-      // Position cible de la caméra
       targetPosition.current.set(
         behindX,
         carPosition[1] + offsetHeight,
         behindZ
       );
 
-      // Point de visée (un peu devant la voiture)
-      const lookAheadFactor = Math.min(1 + speed / 40, 3); // Regarde plus loin à haute vitesse
+      const lookAheadFactor = Math.min(1 + speed / 40, 3);
       const lookAheadX = carPosition[0] + Math.sin(carRotationY) * 5 * lookAheadFactor;
       const lookAheadZ = carPosition[2] + Math.cos(carRotationY) * 5 * lookAheadFactor;
       targetLookAt.current.set(lookAheadX, carPosition[1] + 0.5, lookAheadZ);
     } 
     else if (cameraMode === 'cinematic') {
-      // Mode cinématique (vue de côté dynamique)
-      const angle = carRotationY + Math.PI/2; // Vue de côté
+      // Mode cinématique
+      const angle = carRotationY + Math.PI/2;
       const distance = 15;
-      const height = 3 + Math.sin(Date.now() * 0.0005) * 2; // Oscillation verticale lente
+      const height = 3 + Math.sin(Date.now() * 0.0005) * 2;
       
       targetPosition.current.set(
         carPosition[0] + Math.sin(angle) * distance,
@@ -84,43 +115,53 @@ export const CameraController = ({ carPosition, carRotation }: CameraControllerP
         carPosition[2] + Math.cos(angle) * distance
       );
       
-      // Toujours regarder la voiture
       targetLookAt.current.set(carPosition[0], carPosition[1] + 0.5, carPosition[2]);
     }
     else if (cameraMode === 'cockpit') {
-      // Vue cockpit (première personne)
+      // Vue cockpit
       const forwardX = Math.sin(carRotationY);
       const forwardZ = Math.cos(carRotationY);
       
-      // Position dans l'habitacle (un peu au-dessus du centre de la voiture)
       targetPosition.current.set(
         carPosition[0],
         carPosition[1] + 1.2,
         carPosition[2]
       );
       
-      // Regarder loin devant
       const lookDistance = 10 + speed / 10;
       targetLookAt.current.set(
         carPosition[0] + forwardX * lookDistance,
-        carPosition[1] + 0.8, // Légèrement au-dessus de l'horizon
+        carPosition[1] + 0.8,
         carPosition[2] + forwardZ * lookDistance
       );
     }
+    else if (cameraMode === 'free') {
+      // Mode caméra libre
+      targetPosition.current.set(
+        carPosition[0] + freeMode.offset.x,
+        carPosition[1] + freeMode.offset.y,
+        carPosition[2] + freeMode.offset.z
+      );
+      
+      targetLookAt.current.set(
+        carPosition[0] + freeMode.lookAt.x,
+        carPosition[1] + freeMode.lookAt.y,
+        carPosition[2] + freeMode.lookAt.z
+      );
+    }
 
-    // Ajout d'effets de caméra
+    // Effets de caméra
     const speedFactor = Math.min(speed / 150, 1);
     
-    // Tremblement à haute vitesse
-    if (speed > 60) {
+    if (speed > 60 && cameraMode !== 'free') {
       const shakeIntensity = (speed - 60) / 100 * 0.05;
       targetPosition.current.x += (Math.random() - 0.5) * shakeIntensity;
       targetPosition.current.y += (Math.random() - 0.5) * shakeIntensity;
       targetPosition.current.z += (Math.random() - 0.5) * shakeIntensity;
     }
 
-    // Interpolation fluide - plus rapide à haute vitesse
-    const lerpFactor = 0.05 + speedFactor * 0.03;
+    // Interpolation fluide
+    const lerpFactor = cameraMode === 'free' ? 0.1 : 0.05 + speedFactor * 0.03;
     currentPosition.current.lerp(targetPosition.current, lerpFactor);
     currentLookAt.current.lerp(targetLookAt.current, lerpFactor * 1.5);
 
