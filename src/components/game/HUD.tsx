@@ -24,9 +24,10 @@ export const HUD = () => {
 
       {/* Controls hint */}
       <div className="absolute bottom-4 left-4 bg-black/80 backdrop-blur-sm border border-green-400 rounded-lg p-4 text-green-400 font-mono text-sm">
-        <div>W/↑ - Accelerate</div>
-        <div>S/↓ - Brake</div>
-        <div>A/← D/→ - Steer</div>
+        <div>Z - Accelerate</div>
+        <div>S - Brake</div>
+        <div>Q D - Steer</div>
+        <div className="text-yellow-400 mt-1">SHIFT - Drift Mode</div>
       </div>
 
       {/* Crosshair/center indicator */}

@@ -20,7 +20,7 @@ export const AdvancedCar = () => {
 
   const velocity = useRef([0, 0, 0]);
   const position = useRef([0, 2, 0]);
-  const keys = useRef({ w: false, s: false, a: false, d: false });
+  const keys = useRef({ z: false, s: false, q: false, d: false, shift: false });
 
   useEffect(() => {
     const unsubscribeVelocity = api.velocity.subscribe((v) => velocity.current = v);
@@ -28,42 +28,42 @@ export const AdvancedCar = () => {
     
     const handleKeyDown = (event: KeyboardEvent) => {
       switch (event.code) {
-        case 'KeyW':
-        case 'ArrowUp':
-          keys.current.w = true;
+        case 'KeyZ':
+          keys.current.z = true;
           break;
         case 'KeyS':
-        case 'ArrowDown':
           keys.current.s = true;
           break;
-        case 'KeyA':
-        case 'ArrowLeft':
-          keys.current.a = true;
+        case 'KeyQ':
+          keys.current.q = true;
           break;
         case 'KeyD':
-        case 'ArrowRight':
           keys.current.d = true;
+          break;
+        case 'ShiftLeft':
+        case 'ShiftRight':
+          keys.current.shift = true;
           break;
       }
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
       switch (event.code) {
-        case 'KeyW':
-        case 'ArrowUp':
-          keys.current.w = false;
+        case 'KeyZ':
+          keys.current.z = false;
           break;
         case 'KeyS':
-        case 'ArrowDown':
           keys.current.s = false;
           break;
-        case 'KeyA':
-        case 'ArrowLeft':
-          keys.current.a = false;
+        case 'KeyQ':
+          keys.current.q = false;
           break;
         case 'KeyD':
-        case 'ArrowRight':
           keys.current.d = false;
+          break;
+        case 'ShiftLeft':
+        case 'ShiftRight':
+          keys.current.shift = false;
           break;
       }
     };
@@ -84,16 +84,27 @@ export const AdvancedCar = () => {
     updateSpeed(Math.round(speed * 3.6));
 
     const force = 25000;
-    const torque = 8000;
+    let torque = 8000;
     const maxSpeed = 50;
 
-    if (keys.current.w && speed < maxSpeed) {
+    // Mode drift avec Shift
+    if (keys.current.shift) {
+      // Réduire la friction pour permettre le drift
+      api.material.friction = 0.2;
+      torque = 12000; // Augmenter le couple pour des virages plus serrés
+    } else {
+      // Friction normale
+      api.material.friction = 0.7;
+      torque = 8000;
+    }
+
+    if (keys.current.z && speed < maxSpeed) {
       api.applyLocalForce([0, 0, -force], [0, 0, 0]);
     }
     if (keys.current.s) {
       api.applyLocalForce([0, 0, force * 0.6], [0, 0, 0]);
     }
-    if (keys.current.a) {
+    if (keys.current.q) {
       api.applyTorque([0, torque, 0]);
     }
     if (keys.current.d) {
@@ -105,6 +116,11 @@ export const AdvancedCar = () => {
       const speedFactor = Math.min(speed / 20, 1);
       carGroupRef.current.rotation.z = velocity.current[0] * -0.02 * speedFactor;
       carGroupRef.current.rotation.x = velocity.current[2] * 0.01 * speedFactor;
+      
+      // Effet visuel supplémentaire en mode drift
+      if (keys.current.shift) {
+        carGroupRef.current.rotation.z *= 1.5; // Inclinaison plus prononcée
+      }
     }
   });
 
