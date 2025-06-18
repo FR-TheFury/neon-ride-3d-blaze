@@ -4,7 +4,6 @@ import { useFrame } from '@react-three/fiber';
 import { useBox } from '@react-three/cannon';
 import { Vector3, Mesh, Group } from 'three';
 import { useGame } from '../../contexts/GameContext';
-import { useCarMaterial } from './AdvancedMaterials';
 
 export const AdvancedCar = () => {
   const { updateSpeed } = useGame();
@@ -19,7 +18,6 @@ export const AdvancedCar = () => {
     },
   }));
 
-  const carMaterial = useCarMaterial('#FF6B35');
   const velocity = useRef([0, 0, 0]);
   const position = useRef([0, 2, 0]);
   const keys = useRef({ w: false, s: false, a: false, d: false });
@@ -115,7 +113,14 @@ export const AdvancedCar = () => {
       <mesh ref={ref as React.Ref<Mesh>} castShadow receiveShadow>
         {/* Main car body */}
         <boxGeometry args={[2.2, 0.8, 4.5]} />
-        <primitive object={carMaterial} />
+        <meshPhysicalMaterial 
+          color="#FF6B35"
+          metalness={0.9}
+          roughness={0.1}
+          clearcoat={1.0}
+          clearcoatRoughness={0.1}
+          reflectivity={1.0}
+        />
         
         {/* Wheels */}
         {[
@@ -184,7 +189,13 @@ export const AdvancedCar = () => {
         {/* Spoiler */}
         <mesh position={[0, 0.8, 2]}>
           <boxGeometry args={[1.5, 0.1, 0.3]} />
-          <primitive object={carMaterial} />
+          <meshPhysicalMaterial 
+            color="#FF6B35"
+            metalness={0.9}
+            roughness={0.1}
+            clearcoat={1.0}
+            clearcoatRoughness={0.1}
+          />
         </mesh>
       </mesh>
     </group>

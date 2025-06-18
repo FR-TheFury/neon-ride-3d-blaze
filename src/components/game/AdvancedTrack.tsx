@@ -1,7 +1,6 @@
 
 import { usePlane, useBox } from '@react-three/cannon';
 import { Mesh } from 'three';
-import { useTrackMaterial } from './AdvancedMaterials';
 
 export const AdvancedTrack = () => {
   const [groundRef] = usePlane(() => ({
@@ -9,14 +8,16 @@ export const AdvancedTrack = () => {
     position: [0, 0, 0],
   }));
 
-  const trackMaterial = useTrackMaterial();
-
   return (
     <group>
       {/* Main track surface */}
       <mesh ref={groundRef as React.Ref<Mesh>} receiveShadow>
         <planeGeometry args={[200, 200]} />
-        <primitive object={trackMaterial} />
+        <meshStandardMaterial 
+          color="#1a1a1a"
+          roughness={0.8}
+          metalness={0.1}
+        />
       </mesh>
 
       {/* Track barriers with realistic materials */}
