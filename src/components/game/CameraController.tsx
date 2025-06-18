@@ -21,7 +21,6 @@ export const CameraController = ({ carPosition, carRotation = [0, 0, 0] }: Camer
     lookAt: new Vector3(0, 0, 0)
   });
 
-  // Initialiser les positions
   useEffect(() => {
     currentPosition.current.set(carPosition[0], carPosition[1] + 8, carPosition[2] + 15);
     currentLookAt.current.set(carPosition[0], carPosition[1], carPosition[2]);
@@ -186,5 +185,3 @@ export const CameraController = ({ carPosition, carRotation = [0, 0, 0] }: Camer
 
   return null;
 };
-
-export { CameraController };
