@@ -12,7 +12,6 @@ import { AdvancedLighting } from '../components/game/AdvancedLighting';
 import { ParticleSystem } from '../components/game/ParticleSystem';
 import { HUD } from '../components/game/HUD';
 import { GameProvider } from '../contexts/GameContext';
-import { EffectComposer, Bloom, ChromaticAberration, Noise } from '@react-three/postprocessing';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -176,23 +175,6 @@ const Game = () => {
               />
               <ParticleSystem carPosition={carPosition.current} />
             </Physics>
-            
-            {/* Post-processing effects for visual enhancement */}
-            {(!paused && !loading) && (
-              <EffectComposer>
-                <Bloom 
-                  intensity={1.0} 
-                  luminanceThreshold={0.2} 
-                  luminanceSmoothing={0.9} 
-                />
-                {highQuality && (
-                  <>
-                    <ChromaticAberration offset={[0.002, 0.002]} />
-                    <Noise opacity={0.05} />
-                  </>
-                )}
-              </EffectComposer>
-            )}
           </Suspense>
         </Canvas>
         

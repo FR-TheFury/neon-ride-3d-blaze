@@ -31,7 +31,7 @@ export const Scene = () => {
           ]} />
           <meshStandardMaterial 
             color="#001122" 
-            emissive={`hsl(${Math.random() * 360}, 70%, 30%)`} 
+            emissive="#003366"
             emissiveIntensity={0.2}
           />
         </mesh>
