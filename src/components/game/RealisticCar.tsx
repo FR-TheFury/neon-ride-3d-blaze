@@ -10,11 +10,11 @@ export const RealisticCar = () => {
   const carGroupRef = useRef<Group>(null);
   
   const [ref, api] = useBox(() => ({
-    mass: 800,
+    mass: 1200,
     position: [0, 1, 0],
     args: [2.2, 0.8, 4.5],
     material: {
-      friction: 0.8,
+      friction: 0.7,
       restitution: 0.1,
     },
   }));
@@ -23,15 +23,16 @@ export const RealisticCar = () => {
   const position = useRef([0, 1, 0]);
   const rotation = useRef([0, 0, 0]);
   const keys = useRef({ 
-    forward: false, 
-    backward: false, 
-    left: false, 
-    right: false, 
-    drift: false 
+    forward: false,     // Z
+    backward: false,    // S
+    left: false,        // Q
+    right: false,       // D
+    drift: false,       // Shift
+    handbrake: false    // Espace
   });
 
   useEffect(() => {
-    console.log('RealisticCar: Setting up car physics');
+    console.log('RealisticCar: Initialisation des contrôles');
     
     const unsubscribeVelocity = api.velocity.subscribe((v) => {
       velocity.current = v;
@@ -46,59 +47,84 @@ export const RealisticCar = () => {
     });
     
     const handleKeyDown = (event: KeyboardEvent) => {
+      console.log('Touche appuyée:', event.code);
+      
       switch (event.code) {
-        case 'KeyZ': case 'KeyW': case 'ArrowUp':
+        case 'KeyZ':
           keys.current.forward = true;
-          console.log('Accelerating forward');
+          console.log('AVANCER - ON');
           break;
-        case 'KeyS': case 'ArrowDown':
+        case 'KeyS':
           keys.current.backward = true;
-          console.log('Braking/Reverse');
+          console.log('RECULER - ON');
           break;
-        case 'KeyQ': case 'KeyA': case 'ArrowLeft':
+        case 'KeyQ':
           keys.current.left = true;
-          console.log('Turning left');
+          console.log('GAUCHE - ON');
           break;
-        case 'KeyD': case 'ArrowRight':
+        case 'KeyD':
           keys.current.right = true;
-          console.log('Turning right');
+          console.log('DROITE - ON');
           break;
-        case 'ShiftLeft': case 'ShiftRight':
+        case 'ShiftLeft':
+        case 'ShiftRight':
           keys.current.drift = true;
-          console.log('Drift mode ON');
+          console.log('DRIFT - ON');
+          break;
+        case 'Space':
+          event.preventDefault();
+          keys.current.handbrake = true;
+          console.log('FREIN À MAIN - ON');
           break;
       }
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
+      console.log('Touche relâchée:', event.code);
+      
       switch (event.code) {
-        case 'KeyZ': case 'KeyW': case 'ArrowUp':
+        case 'KeyZ':
           keys.current.forward = false;
+          console.log('AVANCER - OFF');
           break;
-        case 'KeyS': case 'ArrowDown':
+        case 'KeyS':
           keys.current.backward = false;
+          console.log('RECULER - OFF');
           break;
-        case 'KeyQ': case 'KeyA': case 'ArrowLeft':
+        case 'KeyQ':
           keys.current.left = false;
+          console.log('GAUCHE - OFF');
           break;
-        case 'KeyD': case 'ArrowRight':
+        case 'KeyD':
           keys.current.right = false;
+          console.log('DROITE - OFF');
           break;
-        case 'ShiftLeft': case 'ShiftRight':
+        case 'ShiftLeft':
+        case 'ShiftRight':
           keys.current.drift = false;
+          console.log('DRIFT - OFF');
+          break;
+        case 'Space':
+          event.preventDefault();
+          keys.current.handbrake = false;
+          console.log('FREIN À MAIN - OFF');
           break;
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keyup', handleKeyUp);
+    // Ajouter les événements sur window pour capturer toutes les touches
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    
+    console.log('Événements clavier ajoutés');
     
     return () => {
+      console.log('Nettoyage des événements');
       unsubscribeVelocity();
       unsubscribePosition();
       unsubscribeRotation();
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
     };
   }, [api]);
 
@@ -106,102 +132,117 @@ export const RealisticCar = () => {
     const speed = Math.sqrt(velocity.current[0] ** 2 + velocity.current[2] ** 2);
     updateSpeed(Math.round(speed * 3.6));
 
-    // Paramètres de conduite réalistes
-    const motorForce = 3000;
-    const brakeForce = 4000;
-    const maxSteeringAngle = 0.6;
-    const steeringSpeed = 0.08;
-    const maxSpeed = 60;
+    // Forces plus importantes pour un mouvement visible
+    const motorForce = 8000;
+    const brakeForce = 12000;
+    const handbrakeForce = 20000;
+    const maxSpeed = 80;
 
-    // Calcul de la direction actuelle de la voiture
+    // Obtenir l'orientation actuelle de la voiture
     const carRotationY = rotation.current[1];
-    const forwardX = Math.sin(carRotationY);
-    const forwardZ = Math.cos(carRotationY);
-    const rightX = Math.cos(carRotationY);
-    const rightZ = -Math.sin(carRotationY);
+    const forwardDirection = new Vector3(Math.sin(carRotationY), 0, Math.cos(carRotationY));
+    const rightDirection = new Vector3(Math.cos(carRotationY), 0, -Math.sin(carRotationY));
 
-    console.log('Car rotation Y:', carRotationY, 'Speed:', speed);
-
-    // Accélération avant/arrière
-    if (keys.current.forward && speed < maxSpeed) {
-      const forceX = forwardX * motorForce;
-      const forceZ = forwardZ * motorForce;
-      api.applyForce([forceX, 0, forceZ], position.current as [number, number, number]);
-      console.log('Applying forward force:', forceX, forceZ);
+    // Debug des touches pressées
+    const anyKeyPressed = Object.values(keys.current).some(key => key);
+    if (anyKeyPressed) {
+      console.log('Touches actives:', {
+        forward: keys.current.forward,
+        backward: keys.current.backward,
+        left: keys.current.left,
+        right: keys.current.right,
+        drift: keys.current.drift,
+        handbrake: keys.current.handbrake
+      }, 'Vitesse:', Math.round(speed * 3.6), 'km/h');
     }
 
+    // Accélération (Z)
+    if (keys.current.forward && speed < maxSpeed) {
+      const force = forwardDirection.multiplyScalar(-motorForce);
+      api.applyForce([force.x, 0, force.z], [0, 0, 0]);
+      console.log('Application force avant:', force.x, force.z);
+    }
+
+    // Marche arrière (S)
     if (keys.current.backward) {
       if (speed > 1) {
-        // Freinage
-        const brakeX = -forwardX * brakeForce;
-        const brakeZ = -forwardZ * brakeForce;
-        api.applyForce([brakeX, 0, brakeZ], position.current as [number, number, number]);
-        console.log('Braking');
+        // Freinage si on avance
+        const brakeForceVec = forwardDirection.multiplyScalar(brakeForce);
+        api.applyForce([brakeForceVec.x, 0, brakeForceVec.z], [0, 0, 0]);
+        console.log('Freinage');
       } else {
-        // Marche arrière
-        const reverseX = -forwardX * motorForce * 0.5;
-        const reverseZ = -forwardZ * motorForce * 0.5;
-        api.applyForce([reverseX, 0, reverseZ], position.current as [number, number, number]);
-        console.log('Reversing');
+        // Marche arrière si on est arrêté
+        const reverseForce = forwardDirection.multiplyScalar(motorForce * 0.6);
+        api.applyForce([reverseForce.x, 0, reverseForce.z], [0, 0, 0]);
+        console.log('Marche arrière');
       }
     }
 
-    // Direction (seulement si la voiture bouge)
+    // Direction (Q et D) - seulement si la voiture bouge
     if (speed > 0.5) {
-      const steeringForce = speed * 800; // Force proportionnelle à la vitesse
+      const steeringTorque = speed * 1200;
       
       if (keys.current.left) {
-        api.applyTorque([0, steeringForce, 0]);
-        console.log('Steering left with force:', steeringForce);
+        api.applyTorque([0, steeringTorque, 0]);
+        console.log('Virage à gauche, couple:', steeringTorque);
         
-        // Mode drift
-        if (keys.current.drift && speed > 8) {
-          const driftForceX = rightX * 2000;
-          const driftForceZ = rightZ * 2000;
-          api.applyForce([driftForceX, 0, driftForceZ], position.current as [number, number, number]);
-          console.log('Drifting left');
+        // Effet de drift
+        if (keys.current.drift && speed > 10) {
+          const driftForce = rightDirection.multiplyScalar(3000);
+          api.applyForce([driftForce.x, 0, driftForce.z], [0, 0, 0]);
+          console.log('Drift gauche');
         }
       }
       
       if (keys.current.right) {
-        api.applyTorque([0, -steeringForce, 0]);
-        console.log('Steering right with force:', -steeringForce);
+        api.applyTorque([0, -steeringTorque, 0]);
+        console.log('Virage à droite, couple:', -steeringTorque);
         
-        // Mode drift
-        if (keys.current.drift && speed > 8) {
-          const driftForceX = -rightX * 2000;
-          const driftForceZ = -rightZ * 2000;
-          api.applyForce([driftForceX, 0, driftForceZ], position.current as [number, number, number]);
-          console.log('Drifting right');
+        // Effet de drift
+        if (keys.current.drift && speed > 10) {
+          const driftForce = rightDirection.multiplyScalar(-3000);
+          api.applyForce([driftForce.x, 0, driftForce.z], [0, 0, 0]);
+          console.log('Drift droite');
         }
       }
     }
 
-    // Forces de résistance réalistes
+    // Frein à main (Espace)
+    if (keys.current.handbrake) {
+      const handbrakeForceVec = new Vector3(
+        -velocity.current[0] * handbrakeForce,
+        0,
+        -velocity.current[2] * handbrakeForce
+      );
+      api.applyForce([handbrakeForceVec.x, 0, handbrakeForceVec.z], [0, 0, 0]);
+      console.log('Frein à main activé');
+    }
+
+    // Résistance naturelle
     if (speed > 0.1) {
-      const airResistance = speed * speed * 0.8;
-      const rollingResistance = speed * 30;
-      const totalResistance = airResistance + rollingResistance;
-      
-      const resistanceX = -velocity.current[0] * totalResistance * 0.01;
-      const resistanceZ = -velocity.current[2] * totalResistance * 0.01;
-      
-      api.applyForce([resistanceX, 0, resistanceZ], position.current as [number, number, number]);
+      const resistance = speed * speed * 2;
+      const resistanceForce = new Vector3(
+        -velocity.current[0] * resistance,
+        0,
+        -velocity.current[2] * resistance
+      );
+      api.applyForce([resistanceForce.x, 0, resistanceForce.z], [0, 0, 0]);
     }
 
     // Stabilisation anti-basculement
-    const tiltThreshold = 0.2;
-    if (Math.abs(rotation.current[0]) > tiltThreshold || Math.abs(rotation.current[2]) > tiltThreshold) {
-      const stabilizeX = -rotation.current[0] * 3000;
-      const stabilizeZ = -rotation.current[2] * 3000;
-      api.applyTorque([stabilizeX, 0, stabilizeZ]);
+    if (Math.abs(rotation.current[0]) > 0.3 || Math.abs(rotation.current[2]) > 0.3) {
+      api.applyTorque([
+        -rotation.current[0] * 5000,
+        0,
+        -rotation.current[2] * 5000
+      ]);
     }
 
-    // Effets visuels sur le groupe de la voiture
+    // Effets visuels
     if (carGroupRef.current) {
       const speedFactor = Math.min(speed / 20, 1);
-      carGroupRef.current.rotation.z = velocity.current[0] * -0.01 * speedFactor;
-      carGroupRef.current.rotation.x = -velocity.current[2] * 0.005 * speedFactor;
+      carGroupRef.current.rotation.z = velocity.current[0] * -0.02 * speedFactor;
+      carGroupRef.current.rotation.x = velocity.current[2] * 0.01 * speedFactor;
     }
   });
 

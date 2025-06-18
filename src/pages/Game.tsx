@@ -22,7 +22,7 @@ const Game = () => {
   const carRotation = useRef([0, 0, 0]);
 
   useEffect(() => {
-    console.log('Game: Setting up car tracking and focus');
+    console.log('Game: Configuration des contrôles');
     
     // Focus sur le canvas pour les contrôles clavier
     const forceFocus = () => {
@@ -45,7 +45,9 @@ const Game = () => {
     <GameProvider>
       <div className="w-full h-screen bg-black relative overflow-hidden">
         <div className="absolute top-2 left-2 z-20 text-white text-sm bg-black/50 p-2 rounded">
-          Z/W/↑: Accélérer | S/↓: Freiner/Reculer | Q/A/←: Gauche | D/→: Droite | Shift: Drift
+          <div><strong>Contrôles:</strong></div>
+          <div>Z - Accélérer | S - Freiner/Reculer | Q - Gauche | D - Droite</div>
+          <div>SHIFT - Drift | ESPACE - Frein à main</div>
         </div>
         
         <Canvas

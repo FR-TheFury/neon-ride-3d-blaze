@@ -8,14 +8,14 @@ export const HUD = () => {
     <div className="absolute inset-0 pointer-events-none z-10">
       {/* Speed indicator */}
       <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-sm border border-cyan-400 rounded-lg p-4 text-cyan-400 font-mono">
-        <div className="text-xs opacity-70">SPEED</div>
+        <div className="text-xs opacity-70">VITESSE</div>
         <div className="text-2xl font-bold">{gameState.speed}</div>
         <div className="text-xs opacity-70">KM/H</div>
       </div>
 
       {/* Time and lap info */}
       <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm border border-magenta-400 rounded-lg p-4 text-magenta-400 font-mono">
-        <div className="text-xs opacity-70">LAP {gameState.lap}</div>
+        <div className="text-xs opacity-70">TOUR {gameState.lap}</div>
         <div className="text-xl font-bold">
           {Math.floor(gameState.time / 60)}:{(gameState.time % 60).toString().padStart(2, '0')}
         </div>
@@ -24,10 +24,11 @@ export const HUD = () => {
 
       {/* Controls hint */}
       <div className="absolute bottom-4 left-4 bg-black/80 backdrop-blur-sm border border-green-400 rounded-lg p-4 text-green-400 font-mono text-sm">
-        <div>Z - Accelerate</div>
-        <div>S - Brake</div>
-        <div>Q D - Steer</div>
-        <div className="text-yellow-400 mt-1">SHIFT - Drift Mode</div>
+        <div><span className="text-yellow-400">Z</span> - Accélérer</div>
+        <div><span className="text-yellow-400">S</span> - Freiner/Reculer</div>
+        <div><span className="text-yellow-400">Q D</span> - Tourner</div>
+        <div><span className="text-orange-400">SHIFT</span> - Mode Drift</div>
+        <div><span className="text-red-400">ESPACE</span> - Frein à main</div>
       </div>
 
       {/* Crosshair/center indicator */}
