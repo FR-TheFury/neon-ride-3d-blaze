@@ -1,7 +1,7 @@
 
 import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/cannon';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import { extend } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Scene } from '../components/game/Scene';
@@ -16,10 +16,32 @@ import { GameProvider } from '../contexts/GameContext';
 extend(THREE);
 
 const Game = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    // Focus the canvas for keyboard input
+    const handleFocus = () => {
+      if (canvasRef.current) {
+        canvasRef.current.focus();
+        console.log('Canvas focused for keyboard input');
+      }
+    };
+
+    // Focus on mount and when clicking
+    handleFocus();
+    document.addEventListener('click', handleFocus);
+    
+    return () => {
+      document.removeEventListener('click', handleFocus);
+    };
+  }, []);
+
   return (
     <GameProvider>
       <div className="w-full h-screen bg-black relative overflow-hidden">
         <Canvas
+          ref={canvasRef}
+          tabIndex={0}
           camera={{ 
             position: [0, 8, 15], 
             fov: 70,
@@ -33,13 +55,14 @@ const Game = () => {
             powerPreference: 'high-performance',
           }}
           className="bg-gradient-to-b from-blue-900 via-purple-900 to-black"
+          style={{ outline: 'none' }}
         >
           <Suspense fallback={null}>
             <Physics 
-              gravity={[0, -30, 0]}
+              gravity={[0, -9.8, 0]}
               defaultContactMaterial={{
-                friction: 0.8,
-                restitution: 0.2,
+                friction: 1.2,
+                restitution: 0.1,
               }}
               broadphase="SAP"
             >

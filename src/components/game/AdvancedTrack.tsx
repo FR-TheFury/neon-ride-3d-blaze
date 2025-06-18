@@ -6,6 +6,10 @@ export const AdvancedTrack = () => {
   const [groundRef] = usePlane(() => ({
     rotation: [-Math.PI / 2, 0, 0],
     position: [0, 0, 0],
+    material: {
+      friction: 1.8,
+      restitution: 0.1,
+    },
   }));
 
   return (
@@ -56,7 +60,6 @@ export const AdvancedTrack = () => {
         />
       </mesh>
 
-      {/* Start/Finish line */}
       <mesh position={[30, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[8, 2]} />
         <meshStandardMaterial 
@@ -75,6 +78,10 @@ const Barrier = ({ position, rotation }: { position: [number, number, number], r
     rotation,
     args: [0.5, 2, 6],
     type: 'Static',
+    material: {
+      friction: 0.8,
+      restitution: 0.5,
+    },
   }));
 
   return (
@@ -88,7 +95,6 @@ const Barrier = ({ position, rotation }: { position: [number, number, number], r
         metalness={0.1}
       />
       
-      {/* Reflective strips */}
       <mesh position={[0.26, 0, 0]}>
         <boxGeometry args={[0.02, 0.3, 5]} />
         <meshStandardMaterial 
@@ -110,7 +116,6 @@ const Grandstand = ({ position, rotation }: { position: [number, number, number]
         <meshStandardMaterial color="#2a2a2a" roughness={0.7} metalness={0.3} />
       </mesh>
       
-      {/* Seats */}
       {Array.from({ length: 5 }, (_, row) => (
         <mesh key={row} position={[0, 2 + row * 1.2, 2 - row * 0.8]} castShadow>
           <boxGeometry args={[18, 0.5, 1]} />

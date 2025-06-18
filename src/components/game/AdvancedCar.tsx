@@ -1,3 +1,4 @@
+
 import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useBox } from '@react-three/cannon';
@@ -8,24 +9,31 @@ export const AdvancedCar = () => {
   const { updateSpeed } = useGame();
   const carGroupRef = useRef<Group>(null);
   const [ref, api] = useBox(() => ({
-    mass: 1500,
-    position: [0, 2, 0],
+    mass: 1200,
+    position: [0, 1.5, 0],
     args: [2.2, 0.8, 4.5],
     material: {
-      friction: 0.7,
-      restitution: 0.3,
+      friction: 1.5,
+      restitution: 0.2,
     },
   }));
 
   const velocity = useRef([0, 0, 0]);
-  const position = useRef([0, 2, 0]);
+  const position = useRef([0, 1.5, 0]);
   const keys = useRef({ z: false, s: false, q: false, d: false, shift: false });
 
   useEffect(() => {
     console.log('AdvancedCar: Setting up keyboard listeners');
     
-    const unsubscribeVelocity = api.velocity.subscribe((v) => velocity.current = v);
-    const unsubscribePosition = api.position.subscribe((p) => position.current = p);
+    const unsubscribeVelocity = api.velocity.subscribe((v) => {
+      velocity.current = v;
+      console.log('Car velocity:', v);
+    });
+    
+    const unsubscribePosition = api.position.subscribe((p) => {
+      position.current = p;
+      console.log('Car position:', p);
+    });
     
     const handleKeyDown = (event: KeyboardEvent) => {
       console.log('Key pressed:', event.code);
@@ -99,46 +107,58 @@ export const AdvancedCar = () => {
     const speed = Math.sqrt(velocity.current[0] ** 2 + velocity.current[2] ** 2);
     updateSpeed(Math.round(speed * 3.6));
 
-    const force = 25000;
-    let torque = 8000;
-    const maxSpeed = 50;
+    const force = 15000;
+    let torque = 5000;
+    const maxSpeed = 40;
+
+    // Vérifier si des touches sont pressées
+    const anyKeyPressed = keys.current.z || keys.current.s || keys.current.q || keys.current.d;
+    if (anyKeyPressed) {
+      console.log('Applying forces. Keys pressed:', {
+        z: keys.current.z,
+        s: keys.current.s,
+        q: keys.current.q,
+        d: keys.current.d,
+        shift: keys.current.shift
+      });
+    }
 
     // Mode drift avec Shift
     if (keys.current.shift) {
-      // Augmenter le couple pour des virages plus serrés en mode drift
-      torque = 12000;
-      // En mode drift, on applique une force latérale pour simuler le glissement
+      torque = 8000;
       if (keys.current.q || keys.current.d) {
-        const lateralForce = 8000;
+        const lateralForce = 5000;
         const direction = keys.current.q ? 1 : -1;
         api.applyLocalForce([lateralForce * direction, 0, 0], [0, 0, 0]);
+        console.log('Applying lateral drift force:', lateralForce * direction);
       }
-    } else {
-      torque = 8000;
     }
 
     if (keys.current.z && speed < maxSpeed) {
       api.applyLocalForce([0, 0, -force], [0, 0, 0]);
+      console.log('Applying forward force:', force);
     }
     if (keys.current.s) {
-      api.applyLocalForce([0, 0, force * 0.6], [0, 0, 0]);
+      api.applyLocalForce([0, 0, force * 0.8], [0, 0, 0]);
+      console.log('Applying brake force:', force * 0.8);
     }
     if (keys.current.q) {
       api.applyTorque([0, torque, 0]);
+      console.log('Applying left turn torque:', torque);
     }
     if (keys.current.d) {
       api.applyTorque([0, -torque, 0]);
+      console.log('Applying right turn torque:', -torque);
     }
 
     // Car body tilt based on movement
     if (carGroupRef.current) {
-      const speedFactor = Math.min(speed / 20, 1);
+      const speedFactor = Math.min(speed / 15, 1);
       carGroupRef.current.rotation.z = velocity.current[0] * -0.02 * speedFactor;
       carGroupRef.current.rotation.x = velocity.current[2] * 0.01 * speedFactor;
       
-      // Effet visuel supplémentaire en mode drift
       if (keys.current.shift) {
-        carGroupRef.current.rotation.z *= 1.5; // Inclinaison plus prononcée
+        carGroupRef.current.rotation.z *= 1.5;
       }
     }
   });
@@ -170,7 +190,6 @@ export const AdvancedCar = () => {
           </mesh>
         ))}
         
-        {/* Headlights */}
         <mesh position={[0.8, 0.2, -2.3]}>
           <sphereGeometry args={[0.15]} />
           <meshStandardMaterial 
@@ -190,7 +209,6 @@ export const AdvancedCar = () => {
           <pointLight intensity={3} distance={20} color="#ffffff" />
         </mesh>
         
-        {/* Taillights */}
         <mesh position={[0.8, 0.1, 2.3]}>
           <sphereGeometry args={[0.12]} />
           <meshStandardMaterial 
@@ -208,7 +226,6 @@ export const AdvancedCar = () => {
           />
         </mesh>
 
-        {/* Windshield */}
         <mesh position={[0, 0.6, 0.5]}>
           <boxGeometry args={[1.8, 0.8, 2]} />
           <meshPhysicalMaterial 
@@ -221,7 +238,6 @@ export const AdvancedCar = () => {
           />
         </mesh>
 
-        {/* Spoiler */}
         <mesh position={[0, 0.8, 2]}>
           <boxGeometry args={[1.5, 0.1, 0.3]} />
           <meshPhysicalMaterial 
