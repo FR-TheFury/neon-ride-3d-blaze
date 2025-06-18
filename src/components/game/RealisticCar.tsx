@@ -122,7 +122,7 @@ export const RealisticCar = () => {
     if (speed > 0.1) {
       const resistanceX = -forwardX * totalResistance;
       const resistanceZ = -forwardZ * totalResistance;
-      api.applyForce([resistanceX, 0, resistanceZ], position.current);
+      api.applyForce([resistanceX, 0, resistanceZ], position.current as [number, number, number]);
     }
 
     // Mode drift
