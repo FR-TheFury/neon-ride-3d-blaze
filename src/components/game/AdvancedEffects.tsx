@@ -1,6 +1,5 @@
 
-import { EffectComposer, Bloom, ChromaticAberration, Vignette, SMAA } from '@react-three/postprocessing';
-import { BlendFunction } from 'postprocessing';
+import { EffectComposer, Bloom, SMAA } from '@react-three/postprocessing';
 
 export const AdvancedEffects = () => {
   return (
@@ -13,17 +12,6 @@ export const AdvancedEffects = () => {
         intensity={1.5}
         luminanceThreshold={0.2}
         luminanceSmoothing={0.9}
-      />
-      
-      {/* Chromatic aberration for speed effect */}
-      <ChromaticAberration 
-        offset={[0.002, 0.002]}
-      />
-      
-      {/* Vignette for dramatic effect */}
-      <Vignette
-        offset={0.3}
-        darkness={0.5}
       />
     </EffectComposer>
   );
