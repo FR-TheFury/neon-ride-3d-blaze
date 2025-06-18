@@ -1,5 +1,5 @@
 
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useBox } from '@react-three/cannon';
 import { Vector3, Mesh, Group, Euler } from 'three';
@@ -10,11 +10,11 @@ export const RealisticCar = () => {
   const carGroupRef = useRef<Group>(null);
   
   const [ref, api] = useBox(() => ({
-    mass: 500, // Masse réduite
+    mass: 800,
     position: [0, 1, 0],
     args: [2.2, 0.8, 4.5],
     material: {
-      friction: 0.7,
+      friction: 0.8,
       restitution: 0.1,
     },
   }));
@@ -22,7 +22,6 @@ export const RealisticCar = () => {
   const velocity = useRef([0, 0, 0]);
   const position = useRef([0, 1, 0]);
   const rotation = useRef([0, 0, 0]);
-  const steeringAngle = useRef(0);
   const keys = useRef({ 
     forward: false, 
     backward: false, 
@@ -31,38 +30,63 @@ export const RealisticCar = () => {
     drift: false 
   });
 
-  // Souscrire aux changements de position, rotation et vélocité
-  useRef(() => {
-    const unsubscribeVelocity = api.velocity.subscribe((v) => velocity.current = v);
-    const unsubscribePosition = api.position.subscribe((p) => position.current = p);
-    const unsubscribeRotation = api.rotation.subscribe((r) => rotation.current = r);
+  useEffect(() => {
+    console.log('RealisticCar: Setting up car physics');
     
-    return () => {
-      unsubscribeVelocity();
-      unsubscribePosition();
-      unsubscribeRotation();
-    };
-  });
-
-  // Gérer les événements clavier
-  useRef(() => {
+    const unsubscribeVelocity = api.velocity.subscribe((v) => {
+      velocity.current = v;
+    });
+    
+    const unsubscribePosition = api.position.subscribe((p) => {
+      position.current = p;
+    });
+    
+    const unsubscribeRotation = api.rotation.subscribe((r) => {
+      rotation.current = r;
+    });
+    
     const handleKeyDown = (event: KeyboardEvent) => {
       switch (event.code) {
-        case 'KeyZ': case 'KeyW': keys.current.forward = true; break;
-        case 'KeyS': keys.current.backward = true; break;
-        case 'KeyQ': case 'KeyA': keys.current.left = true; break;
-        case 'KeyD': keys.current.right = true; break;
-        case 'ShiftLeft': case 'ShiftRight': keys.current.drift = true; break;
+        case 'KeyZ': case 'KeyW': case 'ArrowUp':
+          keys.current.forward = true;
+          console.log('Accelerating forward');
+          break;
+        case 'KeyS': case 'ArrowDown':
+          keys.current.backward = true;
+          console.log('Braking/Reverse');
+          break;
+        case 'KeyQ': case 'KeyA': case 'ArrowLeft':
+          keys.current.left = true;
+          console.log('Turning left');
+          break;
+        case 'KeyD': case 'ArrowRight':
+          keys.current.right = true;
+          console.log('Turning right');
+          break;
+        case 'ShiftLeft': case 'ShiftRight':
+          keys.current.drift = true;
+          console.log('Drift mode ON');
+          break;
       }
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
       switch (event.code) {
-        case 'KeyZ': case 'KeyW': keys.current.forward = false; break;
-        case 'KeyS': keys.current.backward = false; break;
-        case 'KeyQ': case 'KeyA': keys.current.left = false; break;
-        case 'KeyD': keys.current.right = false; break;
-        case 'ShiftLeft': case 'ShiftRight': keys.current.drift = false; break;
+        case 'KeyZ': case 'KeyW': case 'ArrowUp':
+          keys.current.forward = false;
+          break;
+        case 'KeyS': case 'ArrowDown':
+          keys.current.backward = false;
+          break;
+        case 'KeyQ': case 'KeyA': case 'ArrowLeft':
+          keys.current.left = false;
+          break;
+        case 'KeyD': case 'ArrowRight':
+          keys.current.right = false;
+          break;
+        case 'ShiftLeft': case 'ShiftRight':
+          keys.current.drift = false;
+          break;
       }
     };
 
@@ -70,70 +94,114 @@ export const RealisticCar = () => {
     document.addEventListener('keyup', handleKeyUp);
     
     return () => {
+      unsubscribeVelocity();
+      unsubscribePosition();
+      unsubscribeRotation();
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keyup', handleKeyUp);
     };
-  });
+  }, [api]);
 
   useFrame(() => {
     const speed = Math.sqrt(velocity.current[0] ** 2 + velocity.current[2] ** 2);
     updateSpeed(Math.round(speed * 3.6));
 
-    // Paramètres réalistes
-    const motorForce = 2000; // Force réduite
-    const brakeForce = 3000;
-    const maxSteeringAngle = 0.5; // Angle maximum de direction
-    const steeringSpeed = 0.05;
+    // Paramètres de conduite réalistes
+    const motorForce = 3000;
+    const brakeForce = 4000;
+    const maxSteeringAngle = 0.6;
+    const steeringSpeed = 0.08;
+    const maxSpeed = 60;
 
-    // Gestion de la direction (steering)
-    if (keys.current.left) {
-      steeringAngle.current = Math.min(steeringAngle.current + steeringSpeed, maxSteeringAngle);
-    } else if (keys.current.right) {
-      steeringAngle.current = Math.max(steeringAngle.current - steeringSpeed, -maxSteeringAngle);
-    } else {
-      // Retour automatique au centre
-      steeringAngle.current *= 0.9;
-    }
-
-    // Calcul de la direction basée sur la rotation actuelle de la voiture
+    // Calcul de la direction actuelle de la voiture
     const carRotationY = rotation.current[1];
     const forwardX = Math.sin(carRotationY);
     const forwardZ = Math.cos(carRotationY);
+    const rightX = Math.cos(carRotationY);
+    const rightZ = -Math.sin(carRotationY);
 
-    // Application des forces d'accélération
-    if (keys.current.forward) {
-      api.applyLocalForce([0, 0, -motorForce], [0, 0, 0]);
+    console.log('Car rotation Y:', carRotationY, 'Speed:', speed);
+
+    // Accélération avant/arrière
+    if (keys.current.forward && speed < maxSpeed) {
+      const forceX = forwardX * motorForce;
+      const forceZ = forwardZ * motorForce;
+      api.applyForce([forceX, 0, forceZ], position.current as [number, number, number]);
+      console.log('Applying forward force:', forceX, forceZ);
     }
+
     if (keys.current.backward) {
-      api.applyLocalForce([0, 0, brakeForce * 0.6], [0, 0, 0]);
+      if (speed > 1) {
+        // Freinage
+        const brakeX = -forwardX * brakeForce;
+        const brakeZ = -forwardZ * brakeForce;
+        api.applyForce([brakeX, 0, brakeZ], position.current as [number, number, number]);
+        console.log('Braking');
+      } else {
+        // Marche arrière
+        const reverseX = -forwardX * motorForce * 0.5;
+        const reverseZ = -forwardZ * motorForce * 0.5;
+        api.applyForce([reverseX, 0, reverseZ], position.current as [number, number, number]);
+        console.log('Reversing');
+      }
     }
 
-    // Système de direction réaliste - seulement si on bouge
-    if (speed > 0.5 && Math.abs(steeringAngle.current) > 0.01) {
-      const steeringForce = steeringAngle.current * speed * 800;
-      api.applyTorque([0, -steeringForce, 0]);
+    // Direction (seulement si la voiture bouge)
+    if (speed > 0.5) {
+      const steeringForce = speed * 800; // Force proportionnelle à la vitesse
+      
+      if (keys.current.left) {
+        api.applyTorque([0, steeringForce, 0]);
+        console.log('Steering left with force:', steeringForce);
+        
+        // Mode drift
+        if (keys.current.drift && speed > 8) {
+          const driftForceX = rightX * 2000;
+          const driftForceZ = rightZ * 2000;
+          api.applyForce([driftForceX, 0, driftForceZ], position.current as [number, number, number]);
+          console.log('Drifting left');
+        }
+      }
+      
+      if (keys.current.right) {
+        api.applyTorque([0, -steeringForce, 0]);
+        console.log('Steering right with force:', -steeringForce);
+        
+        // Mode drift
+        if (keys.current.drift && speed > 8) {
+          const driftForceX = -rightX * 2000;
+          const driftForceZ = -rightZ * 2000;
+          api.applyForce([driftForceX, 0, driftForceZ], position.current as [number, number, number]);
+          console.log('Drifting right');
+        }
+      }
     }
 
-    // Forces de résistance
-    const airResistance = speed * speed * 0.02;
-    const rollingResistance = speed * 50;
-    const totalResistance = airResistance + rollingResistance;
-
+    // Forces de résistance réalistes
     if (speed > 0.1) {
-      const resistanceX = -forwardX * totalResistance;
-      const resistanceZ = -forwardZ * totalResistance;
+      const airResistance = speed * speed * 0.8;
+      const rollingResistance = speed * 30;
+      const totalResistance = airResistance + rollingResistance;
+      
+      const resistanceX = -velocity.current[0] * totalResistance * 0.01;
+      const resistanceZ = -velocity.current[2] * totalResistance * 0.01;
+      
       api.applyForce([resistanceX, 0, resistanceZ], position.current as [number, number, number]);
     }
 
-    // Mode drift
-    if (keys.current.drift && speed > 3) {
-      const driftForce = steeringAngle.current * 1500;
-      api.applyLocalForce([driftForce, 0, 0], [0, 0, 0]);
+    // Stabilisation anti-basculement
+    const tiltThreshold = 0.2;
+    if (Math.abs(rotation.current[0]) > tiltThreshold || Math.abs(rotation.current[2]) > tiltThreshold) {
+      const stabilizeX = -rotation.current[0] * 3000;
+      const stabilizeZ = -rotation.current[2] * 3000;
+      api.applyTorque([stabilizeX, 0, stabilizeZ]);
     }
 
-    // Stabilisation pour éviter les basculements
-    if (Math.abs(rotation.current[0]) > 0.1 || Math.abs(rotation.current[2]) > 0.1) {
-      api.applyTorque([-rotation.current[0] * 2000, 0, -rotation.current[2] * 2000]);
+    // Effets visuels sur le groupe de la voiture
+    if (carGroupRef.current) {
+      const speedFactor = Math.min(speed / 20, 1);
+      carGroupRef.current.rotation.z = velocity.current[0] * -0.01 * speedFactor;
+      carGroupRef.current.rotation.x = -velocity.current[2] * 0.005 * speedFactor;
     }
   });
 
@@ -149,17 +217,17 @@ export const RealisticCar = () => {
           clearcoat={1.0}
         />
         
-        {/* Roues avec orientation correcte */}
+        {/* Roues */}
         {[
-          [-1, -0.3, 1.5, steeringAngle.current], // Roue avant gauche (avec direction)
-          [1, -0.3, 1.5, steeringAngle.current],  // Roue avant droite (avec direction)
-          [-1, -0.3, -1.5, 0],                    // Roue arrière gauche (fixe)
-          [1, -0.3, -1.5, 0]                      // Roue arrière droite (fixe)
+          [-1, -0.3, 1.5], // Roue avant gauche
+          [1, -0.3, 1.5],  // Roue avant droite
+          [-1, -0.3, -1.5], // Roue arrière gauche
+          [1, -0.3, -1.5]   // Roue arrière droite
         ].map((wheel, i) => (
           <mesh 
             key={i} 
-            position={[wheel[0], wheel[1], wheel[2]] as [number, number, number]} 
-            rotation={[Math.PI / 2, wheel[3], 0]} 
+            position={wheel as [number, number, number]} 
+            rotation={[Math.PI / 2, 0, 0]} 
             castShadow
           >
             <cylinderGeometry args={[0.4, 0.4, 0.3, 16]} />

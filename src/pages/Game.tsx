@@ -1,3 +1,4 @@
+
 import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/cannon';
 import { Suspense, useEffect, useRef } from 'react';
@@ -21,44 +22,22 @@ const Game = () => {
   const carRotation = useRef([0, 0, 0]);
 
   useEffect(() => {
-    console.log('Game: Initializing keyboard focus');
+    console.log('Game: Setting up car tracking and focus');
     
-    // Fonction pour forcer le focus
+    // Focus sur le canvas pour les contrôles clavier
     const forceFocus = () => {
       if (canvasRef.current) {
         canvasRef.current.focus();
-        console.log('Canvas focused successfully');
-      }
-      // Aussi forcer le focus sur le document
-      if (document.body) {
-        document.body.focus();
       }
     };
 
-    // Focus immédiat
     setTimeout(forceFocus, 100);
     
-    // Focus sur clic
-    const handleClick = () => {
-      console.log('Canvas clicked, focusing...');
-      forceFocus();
-    };
-    
-    // Focus sur toute interaction
-    const handleInteraction = () => {
-      forceFocus();
-    };
-
+    const handleClick = () => forceFocus();
     document.addEventListener('click', handleClick);
-    document.addEventListener('mousedown', handleInteraction);
-    document.addEventListener('keydown', handleInteraction);
-    window.addEventListener('focus', forceFocus);
     
     return () => {
       document.removeEventListener('click', handleClick);
-      document.removeEventListener('mousedown', handleInteraction);
-      document.removeEventListener('keydown', handleInteraction);
-      window.removeEventListener('focus', forceFocus);
     };
   }, []);
 
@@ -66,7 +45,7 @@ const Game = () => {
     <GameProvider>
       <div className="w-full h-screen bg-black relative overflow-hidden">
         <div className="absolute top-2 left-2 z-20 text-white text-sm bg-black/50 p-2 rounded">
-          Utilisez Z/S pour accélérer/freiner, Q/D pour tourner, Shift pour drifter
+          Z/W/↑: Accélérer | S/↓: Freiner/Reculer | Q/A/←: Gauche | D/→: Droite | Shift: Drift
         </div>
         
         <Canvas
@@ -89,7 +68,7 @@ const Game = () => {
             <Physics 
               gravity={[0, -9.8, 0]}
               defaultContactMaterial={{
-                friction: 0.8,
+                friction: 0.9,
                 restitution: 0.1,
               }}
               broadphase="SAP"
