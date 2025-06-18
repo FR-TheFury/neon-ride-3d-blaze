@@ -1,4 +1,3 @@
-
 import { useRef, useEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Vector3 } from 'three';
@@ -9,7 +8,7 @@ interface CameraControllerProps {
   carRotation?: [number, number, number];
 }
 
-const CameraController = ({ carPosition, carRotation = [0, 0, 0] }: CameraControllerProps) => {
+export const CameraController = ({ carPosition, carRotation = [0, 0, 0] }: CameraControllerProps) => {
   const { camera } = useThree();
   const targetPosition = useRef(new Vector3());
   const currentPosition = useRef(new Vector3());
