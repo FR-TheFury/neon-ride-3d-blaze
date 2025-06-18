@@ -1,13 +1,16 @@
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useBox } from '@react-three/cannon';
 import { Vector3, Mesh, Group, Euler } from 'three';
 import { useGame } from '../../contexts/GameContext';
+import { toast } from 'sonner';
 
 export const RealisticCar = () => {
   const { updateSpeed } = useGame();
   const carGroupRef = useRef<Group>(null);
+  const wheelRefs = useRef<Mesh[]>([]);
+  const [debugMode, setDebugMode] = useState(false);
   
   const [ref, api] = useBox(() => ({
     mass: 1200,
@@ -17,11 +20,12 @@ export const RealisticCar = () => {
       friction: 0.7,
       restitution: 0.1,
     },
+    allowSleep: false,
   }));
 
-  const velocity = useRef([0, 0, 0]);
-  const position = useRef([0, 1, 0]);
-  const rotation = useRef([0, 0, 0]);
+  const velocity = useRef<[number, number, number]>([0, 0, 0]);
+  const position = useRef<[number, number, number]>([0, 1, 0]);
+  const rotation = useRef<[number, number, number]>([0, 0, 0]);
   const keys = useRef({ 
     forward: false,     // Z
     backward: false,    // S
@@ -31,9 +35,23 @@ export const RealisticCar = () => {
     handbrake: false    // Espace
   });
 
+  // Fonction pour afficher des logs de débug
+  const debugLog = (message: string, data?: any) => {
+    if (debugMode) {
+      if (data) {
+        console.log(`DEBUG: ${message}`, data);
+      } else {
+        console.log(`DEBUG: ${message}`);
+      }
+    }
+  };
+
+  // Initialiser les contrôles
   useEffect(() => {
     console.log('RealisticCar: Initialisation des contrôles');
+    toast.success("Contrôles initialisés: Z (avancer), S (reculer), Q/D (direction)");
     
+    // Souscription aux mises à jour de l'API de physique
     const unsubscribeVelocity = api.velocity.subscribe((v) => {
       velocity.current = v;
     });
@@ -46,8 +64,9 @@ export const RealisticCar = () => {
       rotation.current = r;
     });
     
+    // Fonction de gestion des touches appuyées
     const handleKeyDown = (event: KeyboardEvent) => {
-      console.log('Touche appuyée:', event.code);
+      event.preventDefault();
       
       switch (event.code) {
         case 'KeyZ':
@@ -72,15 +91,22 @@ export const RealisticCar = () => {
           console.log('DRIFT - ON');
           break;
         case 'Space':
-          event.preventDefault();
           keys.current.handbrake = true;
           console.log('FREIN À MAIN - ON');
           break;
+        case 'KeyB': // Touche pour activer/désactiver le mode debug
+          setDebugMode(!debugMode);
+          console.log(`Mode debug ${!debugMode ? 'activé' : 'désactivé'}`);
+          break;
       }
+
+      // Debug: afficher toutes les touches actives
+      console.log('Touches actives:', keys.current, 'Vitesse:', Math.round(Math.sqrt(velocity.current[0] ** 2 + velocity.current[2] ** 2) * 3.6), 'km/h');
     };
 
+    // Fonction de gestion des touches relâchées
     const handleKeyUp = (event: KeyboardEvent) => {
-      console.log('Touche relâchée:', event.code);
+      event.preventDefault();
       
       switch (event.code) {
         case 'KeyZ':
@@ -105,146 +131,181 @@ export const RealisticCar = () => {
           console.log('DRIFT - OFF');
           break;
         case 'Space':
-          event.preventDefault();
           keys.current.handbrake = false;
           console.log('FREIN À MAIN - OFF');
           break;
       }
+
+      // Debug: afficher toutes les touches relâchées
+      console.log('Touche relâchée:', event.code);
     };
 
-    // Ajouter les événements sur window pour capturer toutes les touches
+    // Capture des événements sur window pour s'assurer qu'ils sont toujours détectés
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     
-    console.log('Événements clavier ajoutés');
+    // Toast d'information
+    toast.info("Utilisez Z, Q, S, D pour conduire");
     
     return () => {
-      console.log('Nettoyage des événements');
+      // Nettoyage des abonnements et événements
       unsubscribeVelocity();
       unsubscribePosition();
       unsubscribeRotation();
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [api]);
+  }, [api, debugMode]);
 
+  // Frame update pour la physique et les mouvements
   useFrame(() => {
+    // Calcul de la vitesse actuelle
     const speed = Math.sqrt(velocity.current[0] ** 2 + velocity.current[2] ** 2);
-    updateSpeed(Math.round(speed * 3.6));
+    updateSpeed(Math.round(speed * 3.6)); // Convertir en km/h
 
-    // Forces plus importantes pour un mouvement visible
-    const motorForce = 8000;
-    const brakeForce = 12000;
-    const handbrakeForce = 20000;
-    const maxSpeed = 80;
+    // Paramètres de conduite - Plus de force pour des mouvements plus visibles
+    const motorForce = 10000; // Force du moteur 
+    const brakeForce = 15000; // Force de freinage
+    const handbrakeForce = 25000; // Force du frein à main
+    const maxSpeed = 100; // Vitesse maximale
+    const steeringStrength = 2000; // Force de direction
 
-    // Obtenir l'orientation actuelle de la voiture
+    // Direction actuelle de la voiture
     const carRotationY = rotation.current[1];
     const forwardDirection = new Vector3(Math.sin(carRotationY), 0, Math.cos(carRotationY));
     const rightDirection = new Vector3(Math.cos(carRotationY), 0, -Math.sin(carRotationY));
 
-    // Debug des touches pressées
-    const anyKeyPressed = Object.values(keys.current).some(key => key);
-    if (anyKeyPressed) {
-      console.log('Touches actives:', {
-        forward: keys.current.forward,
-        backward: keys.current.backward,
-        left: keys.current.left,
-        right: keys.current.right,
-        drift: keys.current.drift,
-        handbrake: keys.current.handbrake
-      }, 'Vitesse:', Math.round(speed * 3.6), 'km/h');
-    }
-
-    // Accélération (Z)
+    // Acceleration (Z)
     if (keys.current.forward && speed < maxSpeed) {
       const force = forwardDirection.multiplyScalar(-motorForce);
       api.applyForce([force.x, 0, force.z], [0, 0, 0]);
-      console.log('Application force avant:', force.x, force.z);
+      debugLog('Accélération appliquée', force);
     }
 
-    // Marche arrière (S)
+    // Freinage / Marche arrière (S)
     if (keys.current.backward) {
       if (speed > 1) {
         // Freinage si on avance
         const brakeForceVec = forwardDirection.multiplyScalar(brakeForce);
         api.applyForce([brakeForceVec.x, 0, brakeForceVec.z], [0, 0, 0]);
-        console.log('Freinage');
+        debugLog('Freinage appliqué');
       } else {
-        // Marche arrière si on est arrêté
+        // Marche arrière si on est presque arrêté
         const reverseForce = forwardDirection.multiplyScalar(motorForce * 0.6);
         api.applyForce([reverseForce.x, 0, reverseForce.z], [0, 0, 0]);
-        console.log('Marche arrière');
+        debugLog('Marche arrière appliquée');
       }
     }
 
-    // Direction (Q et D) - seulement si la voiture bouge
-    if (speed > 0.5) {
-      const steeringTorque = speed * 1200;
+    // Direction (Q et D) - direction plus réactive
+    const steeringForce = steeringStrength * Math.min(speed, 20) / 10;
+    
+    if (keys.current.left && speed > 0.1) {
+      api.applyTorque([0, steeringForce, 0]);
+      debugLog('Virage à gauche appliqué', steeringForce);
       
-      if (keys.current.left) {
-        api.applyTorque([0, steeringTorque, 0]);
-        console.log('Virage à gauche, couple:', steeringTorque);
-        
-        // Effet de drift
-        if (keys.current.drift && speed > 10) {
-          const driftForce = rightDirection.multiplyScalar(3000);
-          api.applyForce([driftForce.x, 0, driftForce.z], [0, 0, 0]);
-          console.log('Drift gauche');
-        }
+      // Effet de drift
+      if (keys.current.drift && speed > 10) {
+        const driftForce = rightDirection.multiplyScalar(4000);
+        api.applyForce([driftForce.x, 0, driftForce.z], [0, 0, 0]);
+        debugLog('Drift gauche appliqué');
       }
+    }
+    
+    if (keys.current.right && speed > 0.1) {
+      api.applyTorque([0, -steeringForce, 0]);
+      debugLog('Virage à droite appliqué', -steeringForce);
       
-      if (keys.current.right) {
-        api.applyTorque([0, -steeringTorque, 0]);
-        console.log('Virage à droite, couple:', -steeringTorque);
-        
-        // Effet de drift
-        if (keys.current.drift && speed > 10) {
-          const driftForce = rightDirection.multiplyScalar(-3000);
-          api.applyForce([driftForce.x, 0, driftForce.z], [0, 0, 0]);
-          console.log('Drift droite');
-        }
+      // Effet de drift
+      if (keys.current.drift && speed > 10) {
+        const driftForce = rightDirection.multiplyScalar(-4000);
+        api.applyForce([driftForce.x, 0, driftForce.z], [0, 0, 0]);
+        debugLog('Drift droite appliqué');
       }
     }
 
     // Frein à main (Espace)
-    if (keys.current.handbrake) {
+    if (keys.current.handbrake && speed > 0.5) {
       const handbrakeForceVec = new Vector3(
         -velocity.current[0] * handbrakeForce,
         0,
         -velocity.current[2] * handbrakeForce
       );
       api.applyForce([handbrakeForceVec.x, 0, handbrakeForceVec.z], [0, 0, 0]);
-      console.log('Frein à main activé');
+      debugLog('Frein à main appliqué');
+      
+      // Effet de dérapage plus prononcé
+      if (speed > 5) {
+        const spinForce = 1000 * (Math.random() * 0.4 + 0.8);
+        api.applyTorque([0, (Math.random() > 0.5 ? 1 : -1) * spinForce, 0]);
+      }
     }
 
-    // Résistance naturelle
+    // Résistance de l'air et du sol
     if (speed > 0.1) {
-      const resistance = speed * speed * 2;
+      const dragCoefficient = 0.5 + (keys.current.handbrake ? 1 : 0);
       const resistanceForce = new Vector3(
-        -velocity.current[0] * resistance,
+        -velocity.current[0] * dragCoefficient * speed,
         0,
-        -velocity.current[2] * resistance
+        -velocity.current[2] * dragCoefficient * speed
       );
       api.applyForce([resistanceForce.x, 0, resistanceForce.z], [0, 0, 0]);
     }
 
     // Stabilisation anti-basculement
-    if (Math.abs(rotation.current[0]) > 0.3 || Math.abs(rotation.current[2]) > 0.3) {
+    if (Math.abs(rotation.current[0]) > 0.2 || Math.abs(rotation.current[2]) > 0.2) {
       api.applyTorque([
-        -rotation.current[0] * 5000,
+        -rotation.current[0] * 8000,
         0,
-        -rotation.current[2] * 5000
+        -rotation.current[2] * 8000
       ]);
+      debugLog('Stabilisation appliquée');
     }
 
-    // Effets visuels
+    // Animation des roues
+    if (wheelRefs.current && wheelRefs.current.length > 0) {
+      const wheelSpeed = speed * 0.5;
+      
+      // Roues avant
+      const steerAngle = (keys.current.left ? 0.3 : keys.current.right ? -0.3 : 0);
+      
+      // Roues avant gauche et droite - direction
+      if (wheelRefs.current[0]) wheelRefs.current[0].rotation.y = steerAngle;
+      if (wheelRefs.current[1]) wheelRefs.current[1].rotation.y = steerAngle;
+      
+      // Toutes les roues - rotation
+      wheelRefs.current.forEach(wheel => {
+        if (wheel) {
+          wheel.rotation.x += keys.current.forward ? -wheelSpeed : keys.current.backward ? wheelSpeed : 0;
+        }
+      });
+    }
+
+    // Effets visuels pour la carrosserie
     if (carGroupRef.current) {
       const speedFactor = Math.min(speed / 20, 1);
-      carGroupRef.current.rotation.z = velocity.current[0] * -0.02 * speedFactor;
-      carGroupRef.current.rotation.x = velocity.current[2] * 0.01 * speedFactor;
+      const turnFactor = (keys.current.left ? -1 : keys.current.right ? 1 : 0) * speedFactor * 0.1;
+      
+      // Inclinaison en virage
+      carGroupRef.current.rotation.z = -turnFactor;
+      
+      // Inclinaison lors de l'accélération/freinage
+      if (keys.current.forward) {
+        carGroupRef.current.rotation.x = -speedFactor * 0.05;
+      } else if (keys.current.backward) {
+        carGroupRef.current.rotation.x = speedFactor * 0.1;
+      } else {
+        carGroupRef.current.rotation.x *= 0.8;
+      }
     }
   });
+
+  // Référence pour les roues
+  const setWheelRef = (index: number) => (el: Mesh) => {
+    if (el) {
+      wheelRefs.current[index] = el;
+    }
+  };
 
   return (
     <group ref={carGroupRef}>
@@ -256,9 +317,23 @@ export const RealisticCar = () => {
           metalness={0.9}
           roughness={0.1}
           clearcoat={1.0}
+          emissive="#FF6B3520"
         />
         
-        {/* Roues */}
+        {/* Vitres (toit) */}
+        <mesh position={[0, 0.6, 0]} castShadow>
+          <boxGeometry args={[2, 0.4, 3]} />
+          <meshPhysicalMaterial 
+            color="#111111"
+            metalness={0.5}
+            roughness={0.3}
+            clearcoat={1.0} 
+            opacity={0.8}
+            transparent={true}
+          />
+        </mesh>
+        
+        {/* Roues avec référence pour l'animation */}
         {[
           [-1, -0.3, 1.5], // Roue avant gauche
           [1, -0.3, 1.5],  // Roue avant droite
@@ -267,12 +342,13 @@ export const RealisticCar = () => {
         ].map((wheel, i) => (
           <mesh 
             key={i} 
+            ref={setWheelRef(i)}
             position={wheel as [number, number, number]} 
             rotation={[Math.PI / 2, 0, 0]} 
             castShadow
           >
             <cylinderGeometry args={[0.4, 0.4, 0.3, 16]} />
-            <meshStandardMaterial color="#1a1a1a" />
+            <meshStandardMaterial color="#1a1a1a" roughness={0.6} />
           </mesh>
         ))}
         
@@ -294,6 +370,18 @@ export const RealisticCar = () => {
         <mesh position={[-0.8, 0.1, 2.3]}>
           <sphereGeometry args={[0.12]} />
           <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={0.5} />
+        </mesh>
+        
+        {/* Bandes de néon sous la voiture */}
+        <mesh position={[0, -0.5, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[2, 4]} />
+          <meshStandardMaterial 
+            color="#00ffff" 
+            emissive="#00ffff" 
+            emissiveIntensity={0.7}
+            transparent={true}
+            opacity={0.7}
+          />
         </mesh>
       </mesh>
     </group>
