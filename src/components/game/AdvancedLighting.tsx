@@ -58,7 +58,6 @@ export const AdvancedLighting = () => {
             penumbra={0.3}
             intensity={1.5}
             color="#FFE4B5"
-            target-position={[0, 0, 0]}
           />
         );
       })}
