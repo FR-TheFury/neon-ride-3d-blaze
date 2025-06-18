@@ -1,4 +1,3 @@
-
 import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useBox } from '@react-three/cannon';
@@ -177,14 +176,14 @@ export const AdvancedCar = () => {
           reflectivity={1.0}
         />
         
-        {/* Wheels */}
+        {/* Wheels - corrected orientation */}
         {[
           [-1, -0.3, 1.5] as [number, number, number], 
           [1, -0.3, 1.5] as [number, number, number], 
           [-1, -0.3, -1.5] as [number, number, number], 
           [1, -0.3, -1.5] as [number, number, number]
         ].map((pos, i) => (
-          <mesh key={i} position={pos} castShadow>
+          <mesh key={i} position={pos} rotation={[0, 0, Math.PI / 2]} castShadow>
             <cylinderGeometry args={[0.4, 0.4, 0.3, 16]} />
             <meshStandardMaterial color="#1a1a1a" roughness={0.8} metalness={0.1} />
           </mesh>
