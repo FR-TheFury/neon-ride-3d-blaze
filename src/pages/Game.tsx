@@ -19,26 +19,54 @@ const Game = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    // Focus the canvas for keyboard input
-    const handleFocus = () => {
+    console.log('Game: Initializing keyboard focus');
+    
+    // Fonction pour forcer le focus
+    const forceFocus = () => {
       if (canvasRef.current) {
         canvasRef.current.focus();
-        console.log('Canvas focused for keyboard input');
+        console.log('Canvas focused successfully');
+      }
+      // Aussi forcer le focus sur le document
+      if (document.body) {
+        document.body.focus();
       }
     };
 
-    // Focus on mount and when clicking
-    handleFocus();
-    document.addEventListener('click', handleFocus);
+    // Focus immédiat
+    setTimeout(forceFocus, 100);
+    
+    // Focus sur clic
+    const handleClick = () => {
+      console.log('Canvas clicked, focusing...');
+      forceFocus();
+    };
+    
+    // Focus sur toute interaction
+    const handleInteraction = () => {
+      forceFocus();
+    };
+
+    document.addEventListener('click', handleClick);
+    document.addEventListener('mousedown', handleInteraction);
+    document.addEventListener('keydown', handleInteraction);
+    window.addEventListener('focus', forceFocus);
     
     return () => {
-      document.removeEventListener('click', handleFocus);
+      document.removeEventListener('click', handleClick);
+      document.removeEventListener('mousedown', handleInteraction);
+      document.removeEventListener('keydown', handleInteraction);
+      window.removeEventListener('focus', forceFocus);
     };
   }, []);
 
   return (
     <GameProvider>
       <div className="w-full h-screen bg-black relative overflow-hidden">
+        <div className="absolute top-2 left-2 z-20 text-white text-sm bg-black/50 p-2 rounded">
+          Cliquez sur la zone de jeu puis utilisez Z/S/Q/D pour conduire
+        </div>
+        
         <Canvas
           ref={canvasRef}
           tabIndex={0}
@@ -54,14 +82,21 @@ const Game = () => {
             alpha: false,
             powerPreference: 'high-performance',
           }}
-          className="bg-gradient-to-b from-blue-900 via-purple-900 to-black"
+          className="bg-gradient-to-b from-blue-900 via-purple-900 to-black cursor-pointer"
           style={{ outline: 'none' }}
+          onCreated={({ gl }) => {
+            console.log('Canvas created, setting up focus');
+            gl.domElement.setAttribute('tabindex', '0');
+            setTimeout(() => {
+              gl.domElement.focus();
+            }, 200);
+          }}
         >
           <Suspense fallback={null}>
             <Physics 
               gravity={[0, -9.8, 0]}
               defaultContactMaterial={{
-                friction: 1.2,
+                friction: 0.8,
                 restitution: 0.1,
               }}
               broadphase="SAP"
