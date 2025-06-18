@@ -1,4 +1,3 @@
-
 import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useBox } from '@react-three/cannon';
@@ -89,12 +88,15 @@ export const AdvancedCar = () => {
 
     // Mode drift avec Shift
     if (keys.current.shift) {
-      // Réduire la friction pour permettre le drift
-      api.material.friction = 0.2;
-      torque = 12000; // Augmenter le couple pour des virages plus serrés
+      // Augmenter le couple pour des virages plus serrés en mode drift
+      torque = 12000;
+      // En mode drift, on applique une force latérale pour simuler le glissement
+      if (keys.current.q || keys.current.d) {
+        const lateralForce = 8000;
+        const direction = keys.current.q ? 1 : -1;
+        api.applyLocalForce([lateralForce * direction, 0, 0], [0, 0, 0]);
+      }
     } else {
-      // Friction normale
-      api.material.friction = 0.7;
       torque = 8000;
     }
 
