@@ -28,6 +28,15 @@ const Game = () => {
   const [loading, setLoading] = useState(true);
   const [highQuality, setHighQuality] = useState(false);
 
+  // Callbacks pour recevoir les données de la voiture
+  const handleCarPositionChange = (position: [number, number, number]) => {
+    carPosition.current = position;
+  };
+
+  const handleCarRotationChange = (rotation: [number, number, number]) => {
+    carRotation.current = rotation;
+  };
+
   useEffect(() => {
     const loadingTimeout = setTimeout(() => {
       setLoading(false);
@@ -168,7 +177,10 @@ const Game = () => {
               <AdvancedLighting />
               <Scene />
               <AdvancedTrack />
-              <RealisticCar />
+              <RealisticCar 
+                onPositionChange={handleCarPositionChange}
+                onRotationChange={handleCarRotationChange}
+              />
               <CameraController 
                 carPosition={carPosition.current} 
                 carRotation={carRotation.current}
@@ -179,7 +191,7 @@ const Game = () => {
         </Canvas>
         
         {/* HUD components */}
-        {!loading && !paused && <HUD />}
+        {!loading && !paused && <HUD carPosition={carPosition.current} />}
         
         {/* Vignette effect overlay */}
         <div className="absolute inset-0 pointer-events-none bg-radial-gradient from-transparent to-black opacity-50"></div>
