@@ -53,9 +53,6 @@ export const AdvancedLighting = () => {
           />
         );
       })}
-      
-      {/* Atmospheric fog */}
-      <fog attach="fog" args={['#87CEEB', 50, 200]} />
     </>
   );
 };

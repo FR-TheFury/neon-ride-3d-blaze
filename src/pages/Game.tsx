@@ -8,7 +8,6 @@ import { Scene } from '../components/game/Scene';
 import { AdvancedCar } from '../components/game/AdvancedCar';
 import { AdvancedTrack } from '../components/game/AdvancedTrack';
 import { AdvancedLighting } from '../components/game/AdvancedLighting';
-import { AdvancedEffects } from '../components/game/AdvancedEffects';
 import { ParticleSystem } from '../components/game/ParticleSystem';
 import { HUD } from '../components/game/HUD';
 import { GameProvider } from '../contexts/GameContext';
@@ -27,16 +26,11 @@ const Game = () => {
             near: 0.1,
             far: 1000 
           }}
-          shadows={{
-            enabled: true,
-            type: THREE.PCFSoftShadowMap,
-          }}
+          shadows
           gl={{
             antialias: true,
             alpha: false,
             powerPreference: 'high-performance',
-            toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.2,
           }}
           className="bg-gradient-to-b from-blue-900 via-purple-900 to-black"
         >
@@ -55,8 +49,6 @@ const Game = () => {
               <AdvancedCar />
               <ParticleSystem carPosition={[0, 2, 0]} />
             </Physics>
-            
-            <AdvancedEffects />
           </Suspense>
         </Canvas>
         
