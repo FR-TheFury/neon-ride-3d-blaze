@@ -22,47 +22,61 @@ export const AdvancedCar = () => {
   const keys = useRef({ z: false, s: false, q: false, d: false, shift: false });
 
   useEffect(() => {
+    console.log('AdvancedCar: Setting up keyboard listeners');
+    
     const unsubscribeVelocity = api.velocity.subscribe((v) => velocity.current = v);
     const unsubscribePosition = api.position.subscribe((p) => position.current = p);
     
     const handleKeyDown = (event: KeyboardEvent) => {
+      console.log('Key pressed:', event.code);
       switch (event.code) {
         case 'KeyZ':
           keys.current.z = true;
+          console.log('Accelerate ON');
           break;
         case 'KeyS':
           keys.current.s = true;
+          console.log('Brake ON');
           break;
         case 'KeyQ':
           keys.current.q = true;
+          console.log('Turn Left ON');
           break;
         case 'KeyD':
           keys.current.d = true;
+          console.log('Turn Right ON');
           break;
         case 'ShiftLeft':
         case 'ShiftRight':
           keys.current.shift = true;
+          console.log('Drift Mode ON');
           break;
       }
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
+      console.log('Key released:', event.code);
       switch (event.code) {
         case 'KeyZ':
           keys.current.z = false;
+          console.log('Accelerate OFF');
           break;
         case 'KeyS':
           keys.current.s = false;
+          console.log('Brake OFF');
           break;
         case 'KeyQ':
           keys.current.q = false;
+          console.log('Turn Left OFF');
           break;
         case 'KeyD':
           keys.current.d = false;
+          console.log('Turn Right OFF');
           break;
         case 'ShiftLeft':
         case 'ShiftRight':
           keys.current.shift = false;
+          console.log('Drift Mode OFF');
           break;
       }
     };
@@ -70,7 +84,10 @@ export const AdvancedCar = () => {
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     
+    console.log('AdvancedCar: Keyboard listeners added');
+    
     return () => {
+      console.log('AdvancedCar: Cleaning up keyboard listeners');
       unsubscribeVelocity();
       unsubscribePosition();
       window.removeEventListener('keydown', handleKeyDown);
