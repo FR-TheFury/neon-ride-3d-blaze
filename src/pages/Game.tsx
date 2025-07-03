@@ -16,7 +16,6 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-// Extend Three.js elements for react-three-fiber
 extend(THREE);
 
 const Game = () => {
@@ -28,7 +27,6 @@ const Game = () => {
   const [loading, setLoading] = useState(true);
   const [highQuality, setHighQuality] = useState(false);
 
-  // Callbacks pour recevoir les données de la voiture
   const handleCarPositionChange = (position: [number, number, number]) => {
     carPosition.current = position;
   };
@@ -40,45 +38,14 @@ const Game = () => {
   useEffect(() => {
     const loadingTimeout = setTimeout(() => {
       setLoading(false);
-      toast.success("Jeu chargé! Prêt à rouler!");
-      
-      // Forcez le focus sur le canvas pour que les contrôles fonctionnent
-      const forceFocus = () => {
-        if (canvasRef.current) {
-          canvasRef.current.focus();
-          console.log("Focus forcé sur le canvas");
-        }
-      };
-      setTimeout(forceFocus, 100);
+      toast.success("Jeu chargé! Utilisez ZQSD pour conduire!");
     }, 1500);
     
     return () => clearTimeout(loadingTimeout);
   }, []);
 
   useEffect(() => {
-    console.log('Game: Configuration des contrôles');
-    
-    // Focus sur le canvas pour les contrôles clavier
-    const forceFocus = () => {
-      if (canvasRef.current) {
-        canvasRef.current.focus();
-      }
-    };
-
-    setTimeout(forceFocus, 100);
-    
-    const handleClick = () => {
-      forceFocus();
-      // Si le jeu est en pause, reprenez-le
-      if (paused) {
-        setPaused(false);
-        toast.info("Jeu repris");
-      }
-    };
-    
-    document.addEventListener('click', handleClick);
-    
-    // Gérer la touche Échap pour mettre en pause
+    // Gestion de la pause avec Échap
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setPaused(!paused);
@@ -89,7 +56,6 @@ const Game = () => {
     window.addEventListener('keydown', handleKeyDown);
     
     return () => {
-      document.removeEventListener('click', handleClick);
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [paused]);
@@ -109,7 +75,7 @@ const Game = () => {
             <div className="w-64 h-2 bg-gray-800 rounded-full">
               <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full animate-[slide-right_1.5s_ease-in-out]"></div>
             </div>
-            <div className="mt-4 text-cyan-300 text-sm">Chargement des modules physiques...</div>
+            <div className="mt-4 text-cyan-300 text-sm">Chargement des contrôles ZQSD...</div>
           </div>
         )}
         
@@ -148,19 +114,13 @@ const Game = () => {
         {/* Canvas principal */}
         <Canvas
           ref={canvasRef}
-          tabIndex={0}
           shadows
           gl={{
             antialias: true,
             alpha: false,
             powerPreference: 'high-performance',
           }}
-          className="bg-gradient-to-b from-blue-900 via-purple-900 to-black cursor-pointer"
-          style={{ outline: 'none' }}
-          onCreated={({ gl }) => {
-            gl.domElement.setAttribute('tabindex', '0');
-            setTimeout(() => gl.domElement.focus(), 200);
-          }}
+          className="bg-gradient-to-b from-blue-900 via-purple-900 to-black"
         >
           <color attach="background" args={["#050510"]} />
           <fog attach="fog" args={["#070720", 30, 90]} />
@@ -190,13 +150,11 @@ const Game = () => {
           </Suspense>
         </Canvas>
         
-        {/* HUD components */}
-        {!loading && !paused && <HUD carPosition={carPosition.current} />}
+        {/* HUD */}
+        {!loading && !paused && <HUD />}
         
-        {/* Vignette effect overlay */}
+        {/* Effets visuels */}
         <div className="absolute inset-0 pointer-events-none bg-radial-gradient from-transparent to-black opacity-50"></div>
-        
-        {/* Scan lines effect */}
         <div className="absolute inset-0 pointer-events-none bg-scanlines opacity-10"></div>
       </div>
     </GameProvider>
