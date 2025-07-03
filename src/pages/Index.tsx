@@ -53,12 +53,14 @@ const Index = () => {
           
           <div className="grid grid-cols-2 gap-4 mt-8">
             <Button
+              onClick={() => navigate('/settings')}
               variant="outline"
               className="border-magenta-400 text-magenta-400 hover:bg-magenta-400/10 rounded-none"
             >
               SETTINGS
             </Button>
             <Button
+              onClick={() => navigate('/leaderboard')}
               variant="outline"
               className="border-yellow-400 text-yellow-400 hover:bg-yellow-400/10 rounded-none"
             >
